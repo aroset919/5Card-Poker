@@ -6,7 +6,8 @@ function Button(props){
         id="drawbtn" 
         name={props.name} 
         value={props.value}
-        formaction={props.action}/>
+        //formaction={props.action}
+        onClick={props.click}/>
     );
 }
 

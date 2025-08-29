@@ -1,4 +1,4 @@
-import React from "react";
+import React, {useState} from "react";
 import Card from "./Card.jsx";
 import Button from "./Submit.jsx";
 
@@ -35,42 +35,67 @@ var cardColl = [
   }
 ]
 
-function MapCards(c){
+function MapCards(drawnCard, index){
    return (
     <Card 
-        index={c.index}
-        img={c.image}
-        value={c.value}
-        suit={c.suit}
+        index={index}
+        img={drawnCard.image}
+        value={drawnCard.value}
+        suit={drawnCard.suit}
     />
     );
 }
 
 function PokerHand(){
-    return ( <form id="cardSubmit" method="post">
-                <div className="poker-hand">
-                  {cardColl.map(MapCards)}
-                </div>
-               
-                <div>
-                    <Button 
-                        name="newgame"
-                        value="Play Again"
-                        formaction=""
-                    />
-                </div>
-            </form>);
+  var drawButton = {
+    name: "drawcards",
+    value: "Draw",
+    formaction: "/draw-cards"
+  }
+
+  var playAgainButton = {
+    name: "newgame",
+    value: "Play Again",
+    formaction: "/reshuffle-game"
+  }
+
+  var [round, updateRound] = useState(0);
+  var [buttonInfo, updateButton] = useState(drawButton);
+  var [gameover, updateGameOver] = useState(false)
+
+  function newRound(){
+    if(round===3){
+      updateRound(0);
+      updateButton(playAgainButton);
+      updateGameOver(true);
+    }else if(round===0){
+      updateRound(round+1);
+      updateButton(drawButton);
+      updateGameOver(false);
+    }else{
+      updateRound(round+1);
+    }
+  }
+
+  return (
+    //<form id="cardSubmit" method="post">
+    <div>
+      <div className="poker-hand">
+        {cardColl.map(MapCards)}
+      </div>
+      
+      {gameover ? <h2>Game Over!</h2> : null}
+      <div>
+          <Button 
+              click={newRound}
+              name={buttonInfo.name}
+              value={buttonInfo.value}
+              //formaction={buttonInfo.formaction}
+          />
+      </div>
+      </div>
+    //</form>
+  );
 }
 
 export default PokerHand;
-
-/**                
-<div>
-    <%if(endgame){%>
-        <h2>Game Over!!</h2>
-        <input type="submit" id="drawbtn" name="newgame" value="Play Again" formaction="/reshuffle-game">
-    <%}else{%>
-        <input type="submit" id="drawbtn" name="drawcards" value="Draw" formaction="/draw-cards">
-    <%}%>
-</div>
-*/
