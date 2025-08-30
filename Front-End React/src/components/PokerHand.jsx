@@ -38,6 +38,7 @@ var cardColl = [
 function MapCards(drawnCard, index){
    return (
     <Card 
+        key={index}
         index={index}
         img={drawnCard.image}
         value={drawnCard.value}
