@@ -1,7 +1,8 @@
 import React from "react";
 
 function Footer(){
-    return (<p>Placeholder Footer</p>)
+    var now = new Date().getFullYear();
+    return (<p className="footer">Copyright ©{now}</p>)
 }
 
 export default Footer;
