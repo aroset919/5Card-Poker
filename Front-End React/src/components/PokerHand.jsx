@@ -34,8 +34,8 @@ var cardColl = [
   }
 ]
 
-
-function MapCards(drawnCard, index){
+function PokerHand(props){
+  function MapCards(drawnCard, index){
    return (
     <Card 
         key={index}
@@ -43,11 +43,12 @@ function MapCards(drawnCard, index){
         img={drawnCard.image}
         value={drawnCard.value}
         suit={drawnCard.suit}
+        selectCard={props.selectCards[index]}
+        updateSelected={props.updateSelected}
     />
     );
-}
+  }
 
-function PokerHand(){
   return (
     <div className="poker-hand">
       {cardColl.map(MapCards)}
