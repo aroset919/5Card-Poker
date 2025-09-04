@@ -1,6 +1,7 @@
 import React, {useState} from "react";
 import PokerHand from "./PokerHand.jsx";
 import Button from "./Submit.jsx";
+import GameOver from "./GameOver.jsx";
 
 var cardColl = [
   {
@@ -34,6 +35,7 @@ var cardColl = [
     suit: "Diamond"
   }
 ]
+
 
 function HandSubmit(){
   var drawButton = {
@@ -84,9 +86,6 @@ function HandSubmit(){
     }
 
     if(round!=4){updateRound(round+1);}
-
-    console.log("Round: " + round);
-    console.log(selectCards);
   }
 
   return (
@@ -95,9 +94,10 @@ function HandSubmit(){
       <PokerHand 
         selectCards={selectCards}
         updateSelected={cardSelected}
+        cardColl={cardColl}
       />
       
-      {gameover ? <h2>Game Over!</h2> : null}
+      {gameover ? <GameOver />: null}
       <div>
           <Button 
               click={newRound}

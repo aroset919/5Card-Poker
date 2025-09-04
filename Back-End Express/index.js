@@ -1,10 +1,15 @@
 import express from "express";
 import axios from "axios";
 import bodyParser from "body-parser";
+import path from "path";
+import { fileURLToPath } from 'url';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const app = express();
 const port = 3000;
 const API_URL = "https://deckofcardsapi.com";
+const WEB_URL = path.join(__dirname, "../Front-End React/dist");
 
 const deckcount = 1;
 const totalcards = 5;
@@ -13,12 +18,16 @@ const cards = [];
 var deck;
 var round = 0;
 
-
-app.use(express.static("public"));
+app.use(express.static(WEB_URL));
 app.use(bodyParser.urlencoded({extended : true}));
 
+//Start the express app.
+app.get("/", (req, res) =>{
+    res.sendFile("index.html");
+});
+
 //Obtain shuffled deck of cards to start the game with
-app.get("/", async (req, res) => {
+app.get("/init-data", async (req, res) => {
     try{
         const config = {
             params: {deck_count: deckcount}
@@ -31,22 +40,21 @@ app.get("/", async (req, res) => {
         for(var i=0; i < totalcards; i++){
             cards.push(
             {
+                index: i,
                 code: "??",
                 img: API_URL + "/static/img/back.png",
                 value: "??",
                 suit: "??", 
             });
         }
-
-        res.render("index.ejs", 
-        {
+        res.json({
             drawncards: cards,
             endgame: false,
             hold: "disabled",
         });
 
     }catch(error){
-        res.render("index.ejs", {content: JSON.stringify(error.response)});
+        //res.sendFile(path.join(WEB_URL, "/index.html"), {content: JSON.stringify(error.response)});
         console.log(error);
     }
 });
