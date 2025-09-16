@@ -2,6 +2,7 @@ import express from "express";
 import axios from "axios";
 import bodyParser from "body-parser";
 import path from "path";
+import {DEFAULTS} from "../Front-End React/src/components/Defaults.js";
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -15,15 +16,21 @@ const deckcount = 1;
 const totalcards = 5;
 const cards = [];
 
+var game_state = DEFAULTS.GAME_STATES.NEW_SESSION;
 var deck;
 var round = 0;
 
 app.use(express.static(FRONTEND_PATH));
 app.use(bodyParser.urlencoded({extended : true}));
+app.use(express.json());
 
 //Start the express app.
 app.get("/", (req, res) =>{
     res.sendFile("index.html");
+});
+
+app.get("/game-state", (req, res) =>{
+    res.json({currState: game_state})
 });
 
 //Obtain shuffled deck of cards to start the game with
@@ -48,11 +55,14 @@ app.get("/init-data", async (req, res) => {
             });
         }
 
+        game_state = DEFAULTS.GAME_STATES.NEW_GAME;
+
         res.json({
             drawncards: cards,
             endgame: false,
             hold: "disabled",
             currRound: round,
+            gameState: game_state,
         });
 
     }catch(error){
@@ -64,35 +74,32 @@ app.get("/init-data", async (req, res) => {
 //Draw cards according to amount desired
 app.post("/draw-cards", async (req, res) =>{
     console.log("draw-time!");
-    try{
-        const cardInput = req.body;
 
-        var currCount;
-        if (typeof cardInput === 'object' && cardInput !==null){
-            currCount = Object.keys(cardInput).length + 1;
-        }else if (cardInput === null || cardInput === undefined){
-            currCount = 0;
-            cardInput = [];
+    try{
+        var input = req.body;
+        console.log('Input \n' + input);
+        var currCount = 0;
+
+        //Obtain how many cards are being held
+        if(input != null){ 
+            currCount = input.length; 
         }else{
-            currCount = cardInput.length + 1;
+            input = [];
         }
 
-        console.log(currCount);
-
-        //Determine how many cards to be drawn
         var drawCount = totalcards - currCount;
-
+        console.log(`Count: ${drawCount}`);
         const config = {
             params: {count: drawCount}
         }
 
         //Draw cards
         const cInfo = await axios.get(API_URL + `/api/deck/${deck}/draw`, config);
-
+        console.log(cInfo.data);
         //Assign cards to open spots
         for(var i=0, j=0; i < totalcards; i++){
             var cardNum = `card${i+1}`;
-            if(!(cardNum in cardInput)){
+            if(!(cardNum in input)){
                 cards[i].code = cInfo.data.cards[j].code
                 cards[i].img = cInfo.data.cards[j].image
                 cards[i].value = cInfo.data.cards[j].value
@@ -100,34 +107,37 @@ app.post("/draw-cards", async (req, res) =>{
                 j++;
             }
         }
-        
+
         round++;
 
-        //Check Round Condition
         if(round < 3){
+            game_state = DEFAULTS.GAME_STATES.DRAWPHASE;
             res.json({
                 drawncards: cards,
                 endgame: false,
                 hold: "",
                 currRound: round,
+                gameState: game_state,
             });
         }else{
+            game_state = DEFAULTS.GAME_STATES.GAME_OVER;
             res.json({
                 drawncards: cards,
                 endgame: true,
                 hold: "disabled",
                 currRound: round,
+                gameState: game_state,
             });
-        }   
-        
+        } 
+
     }catch(error){
         console.log(error);
-        res.send({content: JSON.stringify(error.response)});
+        res.sendError({content: JSON.stringify(error.response)});
     }
 });
 
 //Shuffle deck and start a new game
-app.post("/reshuffle-game", async (req, res)=>{
+app.get("/reshuffle-game", async (req, res)=>{
     try{
         const config = {
             params: {remaining: false}
@@ -138,6 +148,7 @@ app.post("/reshuffle-game", async (req, res)=>{
         for(var i=0; i < totalcards; i++){
            cards[i] = 
            {
+                index: i,
                 code: "??",
                 img: API_URL + "/static/img/back.png",
                 value: "??",
@@ -146,12 +157,14 @@ app.post("/reshuffle-game", async (req, res)=>{
         }
 
         round = 0;
+        game_state = DEFAULTS.GAME_STATES.NEW_GAME;
 
         res.json({
             drawncards: cards,
             endgame: false,
             hold: "disabled",
             currRound: round,
+            gameState: game_state,
         });
 
     }catch(error){
