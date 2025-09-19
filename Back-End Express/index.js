@@ -59,7 +59,6 @@ app.get("/init-data", async (req, res) => {
 
         res.json({
             drawncards: cards,
-            endgame: false,
             hold: "disabled",
             currRound: round,
             gameState: game_state,
@@ -67,17 +66,14 @@ app.get("/init-data", async (req, res) => {
 
     }catch(error){
         console.log(error);
-        res.sendError({content: JSON.stringify(error.response)});
+        res.error({content: JSON.stringify(error.response)});
     }
 });
 
 //Draw cards according to amount desired
 app.post("/draw-cards", async (req, res) =>{
-    console.log("draw-time!");
-
     try{
         var input = req.body;
-        console.log('Input \n' + input);
         var currCount = 0;
 
         //Obtain how many cards are being held
@@ -88,22 +84,23 @@ app.post("/draw-cards", async (req, res) =>{
         }
 
         var drawCount = totalcards - currCount;
-        console.log(`Count: ${drawCount}`);
         const config = {
             params: {count: drawCount}
         }
 
         //Draw cards
         const cInfo = await axios.get(API_URL + `/api/deck/${deck}/draw`, config);
-        console.log(cInfo.data);
+        const data = cInfo.data;
+
         //Assign cards to open spots
         for(var i=0, j=0; i < totalcards; i++){
-            var cardNum = `card${i+1}`;
-            if(!(cardNum in input)){
-                cards[i].code = cInfo.data.cards[j].code
-                cards[i].img = cInfo.data.cards[j].image
-                cards[i].value = cInfo.data.cards[j].value
-                cards[i].suit = cInfo.data.cards[j].suit
+            let cardNum = `card${i+1}`;
+
+            if(!(input.includes(cardNum))){
+                cards[i].code = data.cards[j].code;
+                cards[i].img = data.cards[j].image;
+                cards[i].value = data.cards[j].value;
+                cards[i].suit = data.cards[j].suit;
                 j++;
             }
         }
@@ -114,7 +111,6 @@ app.post("/draw-cards", async (req, res) =>{
             game_state = DEFAULTS.GAME_STATES.DRAWPHASE;
             res.json({
                 drawncards: cards,
-                endgame: false,
                 hold: "",
                 currRound: round,
                 gameState: game_state,
@@ -123,7 +119,6 @@ app.post("/draw-cards", async (req, res) =>{
             game_state = DEFAULTS.GAME_STATES.GAME_OVER;
             res.json({
                 drawncards: cards,
-                endgame: true,
                 hold: "disabled",
                 currRound: round,
                 gameState: game_state,
@@ -132,7 +127,7 @@ app.post("/draw-cards", async (req, res) =>{
 
     }catch(error){
         console.log(error);
-        res.sendError({content: JSON.stringify(error.response)});
+        res.error({content: JSON.stringify(error.response)});
     }
 });
 
@@ -161,7 +156,6 @@ app.get("/reshuffle-game", async (req, res)=>{
 
         res.json({
             drawncards: cards,
-            endgame: false,
             hold: "disabled",
             currRound: round,
             gameState: game_state,
@@ -169,7 +163,7 @@ app.get("/reshuffle-game", async (req, res)=>{
 
     }catch(error){
         console.log(error);
-        res.send({content: JSON.stringify(error.response)});
+        res.error({content: JSON.stringify(error.response)});
     }
 });
 

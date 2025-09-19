@@ -19,7 +19,7 @@ function PokerHand(props){
 
   return (
     <div className="poker-hand">
-      {props.cardColl.map(MapCards)}
+      {props.cardColl != null && props.cardColl.map(MapCards)}
     </div>
   );
 }
