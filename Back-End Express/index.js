@@ -4,7 +4,6 @@ import bodyParser from "body-parser";
 import path from "path";
 import {DEFAULTS} from "../Front-End React/src/components/Defaults.js";
 import { fileURLToPath } from 'url';
-import { match } from "assert";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -73,9 +72,11 @@ function straightCheck(hand){
     
     for(var i=0; i < totalcards-1; i++){
         let diff = hand[i+1].val - hand[i].val;
-        if(hand[i+1].val == 14 && hand[i] == 5){
+
+        if(hand[i+1].val == 14 && hand[i].val == 5){
             diff = 1;
         }
+
         if(!(diff == 1)){
             isStraight = false;
             break;
@@ -121,7 +122,7 @@ function handCheck(){
         let suit = e.code.charAt(1);
 
         switch(val){
-            case 0:
+            case '0':
                 val='10';
                 break;
             case 'J':
@@ -150,11 +151,11 @@ function handCheck(){
     let isStraight = straightCheck(hand);
     let matches = matchCheck(hand);
 
-    if(isFlush && isStriaght){
+    if(isFlush && isStraight){
         if(royalCheck(hand)){
             pokerHand = "Royal Flush";
         }else{
-            pokerHand = "Stright Flush";
+            pokerHand = "Straight Flush";
         }
     }else if(matches == 4){
         pokerHand = "Four of a Kind";
@@ -172,6 +173,7 @@ function handCheck(){
         pokerHand = "Pair";
     }else{
         let highCard = hand[hand.length-1].val;
+
         if(highCard == 14){
             highCard = "Ace";
         }else if(highCard == 13){
@@ -232,7 +234,7 @@ app.get("/init-data", async (req, res) => {
 
     }catch(error){
         console.log(error);
-        res.error({content: JSON.stringify(error.response)});
+        res.send({content: JSON.stringify(error.response)});
     }
 });
 
@@ -296,7 +298,7 @@ app.post("/draw-cards", async (req, res) =>{
 
     }catch(error){
         console.log(error);
-        res.error({content: JSON.stringify(error.response)});
+        res.send({content: JSON.stringify(error.response)});
     }
 });
 
@@ -333,7 +335,7 @@ app.get("/reshuffle-game", async (req, res)=>{
 
     }catch(error){
         console.log(error);
-        res.error({content: JSON.stringify(error.response)});
+        res.send({content: JSON.stringify(error.response)});
     }
 });
 
