@@ -11,6 +11,7 @@ function PokerHand(props){
         img={drawnCard.img}
         value={drawnCard.value}
         suit={drawnCard.suit}
+        isDisabled={props.isDisabled}
         selectCard={props.selectCards[index]}
         updateSelected={props.updateSelected}
     />

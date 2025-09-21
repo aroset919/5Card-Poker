@@ -4,6 +4,7 @@ import bodyParser from "body-parser";
 import path from "path";
 import {DEFAULTS} from "../Front-End React/src/components/Defaults.js";
 import { fileURLToPath } from 'url';
+import { match } from "assert";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -23,6 +24,169 @@ var round = 0;
 app.use(express.static(FRONTEND_PATH));
 app.use(bodyParser.urlencoded({extended : true}));
 app.use(express.json());
+
+//internal middleware method to return the current poker hand --flush, straight, high card, etc--
+
+//Function matchCheck checks for pairs, trips, four of a kind, and full houses
+function matchCheck(hand){
+    let match = 0;
+    let pairFound = false;
+    let tripsFound = false;
+
+    let count = hand.reduce((acc, curr) => {
+        acc[curr.val] = (acc[curr.val] || 0) + 1;
+        return acc;
+    }, {});
+    
+    Object.keys(count).forEach((key)=>{
+        switch(count[key]){
+            case 4:
+                match = 4;
+                break;
+            case 3:
+                if(pairFound){
+                    match = 5;
+                }else{
+                    match = 3;
+                    tripsFound = true;
+                }
+                break;
+            case 2:
+                if(tripsFound){
+                    match = 5;
+                }else if(pairFound){
+                    match = 2;
+                }else{
+                    match = 1;
+                    pairFound = true;
+                }
+                break;
+        }
+    });
+
+    return match;
+}
+
+//Function straightCheck checks for a straight
+function straightCheck(hand){
+    var isStraight = true;
+    
+    for(var i=0; i < totalcards-1; i++){
+        let diff = hand[i+1].val - hand[i].val;
+        if(hand[i+1].val == 14 && hand[i] == 5){
+            diff = 1;
+        }
+        if(!(diff == 1)){
+            isStraight = false;
+            break;
+        }
+    }
+
+    return isStraight;
+}
+
+//Function flushCheck checks for a flush
+function flushCheck(hand){
+    var isFlush = true;
+    let suitStart = hand[0].suit;
+    hand.forEach((e)=>{
+        if(!(e.suit == suitStart))
+            isFlush = false;
+    });
+
+    return isFlush;
+}
+
+//Function royalCheck Checks for the Royal Straight Flush
+function royalCheck(hand){
+    let start = 10;
+    var isRoyal = true;
+    hand.forEach((e)=>{
+        if(!(start == e.val)){
+            isRoyal = false;
+        }
+        start++;
+    });
+
+    return isRoyal;
+}
+
+//Function handCheck checks the current hand and returns the name of the poker hand
+function handCheck(){
+    let hand = []
+    var pokerHand = '';
+
+    cards.forEach((e) =>{
+        let val = e.code.charAt(0);
+        let suit = e.code.charAt(1);
+
+        switch(val){
+            case 0:
+                val='10';
+                break;
+            case 'J':
+                val='11';
+                break;
+            case 'Q':
+                val='12';
+                break;
+            case 'K':
+                val='13';
+                break;
+            case 'A':
+                val='14';
+                break;
+        }
+
+        hand.push({
+            val: val,
+            suit: suit
+        });
+    });
+
+    hand.sort((a,b) => a.val - b.val);
+
+    let isFlush = flushCheck(hand);
+    let isStraight = straightCheck(hand);
+    let matches = matchCheck(hand);
+
+    if(isFlush && isStriaght){
+        if(royalCheck(hand)){
+            pokerHand = "Royal Flush";
+        }else{
+            pokerHand = "Stright Flush";
+        }
+    }else if(matches == 4){
+        pokerHand = "Four of a Kind";
+    }else if(matches == 5){
+        pokerHand = "Full House";
+    }else if(isFlush){
+        pokerHand = "Flush";
+    }else if(isStraight){
+        pokerHand = "Straight";
+    }else if(matches == 3){
+        pokerHand = "Three of a Kind";
+    }else if(matches == 2){
+        pokerHand = "Two Pair";
+    }else if(matches == 1){
+        pokerHand = "Pair";
+    }else{
+        let highCard = hand[hand.length-1].val;
+        if(highCard == 14){
+            highCard = "Ace";
+        }else if(highCard == 13){
+            highCard = "King";
+        }else if(highCard == 12){
+            highCard = "Queen";
+        }else if(highCard == 11){
+            highCard = "Jack";
+        }
+        pokerHand = `${highCard} High`;
+    }
+
+    return pokerHand;
+}
+
 
 //Start the express app.
 app.get("/", (req, res) =>{
@@ -44,6 +208,7 @@ app.get("/init-data", async (req, res) => {
         const dInfo = await axios.get(API_URL + "/api/deck/new/shuffle", config);
         deck = dInfo.data.deck_id;
 
+        cards.length = 0;
         for(var i=0; i < totalcards; i++){
             cards.push(
             {
@@ -59,9 +224,10 @@ app.get("/init-data", async (req, res) => {
 
         res.json({
             drawncards: cards,
-            hold: "disabled",
+            hold: true,
             currRound: round,
             gameState: game_state,
+            pokerHand: "",
         });
 
     }catch(error){
@@ -106,22 +272,25 @@ app.post("/draw-cards", async (req, res) =>{
         }
 
         round++;
+        var pokerHand = handCheck();
 
         if(round < 3){
             game_state = DEFAULTS.GAME_STATES.DRAWPHASE;
             res.json({
                 drawncards: cards,
-                hold: "",
+                hold: false,
                 currRound: round,
                 gameState: game_state,
+                pokerHand: pokerHand,
             });
         }else{
             game_state = DEFAULTS.GAME_STATES.GAME_OVER;
             res.json({
                 drawncards: cards,
-                hold: "disabled",
+                hold: true,
                 currRound: round,
                 gameState: game_state,
+                pokerHand: pokerHand,
             });
         } 
 
@@ -156,9 +325,10 @@ app.get("/reshuffle-game", async (req, res)=>{
 
         res.json({
             drawncards: cards,
-            hold: "disabled",
+            hold: true,
             currRound: round,
             gameState: game_state,
+            pokerHand: "",
         });
 
     }catch(error){

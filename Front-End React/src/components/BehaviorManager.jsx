@@ -2,6 +2,7 @@ import React, {useRef, useState, useEffect} from "react";
 import {DEFAULTS} from "./Defaults.js";
 import {APIHandler} from "./API_Handler.jsx";
 import HandSubmit from "./HandSubmit";
+import HandDisplay from "./HandDisplay.jsx";
 
 //Behavior manager holds states and sends the appropriate values to perform front-end behavior
 function BehaviorManager(){
@@ -9,8 +10,10 @@ function BehaviorManager(){
     var [gameData, updateGame] = useState({
         Game_State: DEFAULTS.GAME_STATES.NEW_SESSION,
         currHand: [],
+        currPokerHand: "",
         currBtn: DEFAULTS.BUTTONS.NEWGAME_BTN,
         round: -1,
+        isDisabled: true,
     });
     var refRender = useRef(true);
     var [selectCards, updateSelected] = useState(DEFAULTS.deselectAll);
@@ -23,11 +26,30 @@ function BehaviorManager(){
             const getData = async() =>{
                 try{
                     const newData = await APIHandler(formData);
+
+                    let button;
+                    switch(newData.gameState){
+                        case DEFAULTS.GAME_STATES.NEW_GAME:
+                            button = DEFAULTS.BUTTONS.NEWGAME_BTN;
+                            updateSelected(DEFAULTS.deselectAll);
+                            break;
+                        case DEFAULTS.GAME_STATES.DRAWPHASE:
+                            button = DEFAULTS.BUTTONS.DRAW_BTN;
+                            break;
+                        case DEFAULTS.GAME_STATES.GAME_OVER:
+                            button = DEFAULTS.BUTTONS.PLAYAGAIN_BTN;
+                            updateSelected(DEFAULTS.selectAll);
+                            break;
+                    }
+
                     updateGame({
                         ...gameData,
                         currHand: newData.drawncards,
                         round: newData.currRound,
                         Game_State: newData.gameState,
+                        currBtn: button,
+                        isDisabled: newData.hold,
+                        currPokerHand: newData.pokerHand,
                     });
                 }catch (err) {
                     console.log("Error Displaying New Data: \n" + err.message);
@@ -60,20 +82,25 @@ function BehaviorManager(){
         updateFormData(filteredChoices);
     }
 
+    //Add a component to display the current poker hand 
     return (
-        <HandSubmit
-            formSubmit={newRound}
-            cardSelected={cardSelected}
-            gameover={
-                (gameData.Game_State == DEFAULTS.GAME_STATES.GAME_OVER ? true : false)
-            }
-            selectCards={selectCards}
-            cardColl={gameData.currHand}
-            buttonInfo={gameData.currBtn}
-        />
+        <div>
+            <HandDisplay 
+                pokerhand={gameData.currPokerHand}
+            />
+            <HandSubmit
+                formSubmit={newRound}
+                cardSelected={cardSelected}
+                gameover={
+                    (gameData.Game_State == DEFAULTS.GAME_STATES.GAME_OVER ? true : false)
+                }
+                selectCards={selectCards}
+                cardColl={gameData.currHand}
+                buttonInfo={gameData.currBtn}
+                isDisabled={gameData.isDisabled}
+            />
+        </div>
     );
-
-
 }
 
 export default BehaviorManager;

@@ -10,7 +10,7 @@ function Card(props){
         <label htmlFor={"cd" + cardNum}>
             <div className={"card slot" + cardNum}>
                 <img src={props.img} alt={props.value + " of " + props.suit} />
-                <p>Hold</p>
+                <p>{props.value + " OF " + props.suit}</p>
             </div>
         </label>
 
@@ -20,6 +20,7 @@ function Card(props){
             id={"cd" + cardNum} 
             name={"card"} 
             value={props.selectCard ? "Hold" : "Change"}
+            disabled={props.isDisabled}
             onClick={()=>props.updateSelected(props.index)}        
         />
 
@@ -29,7 +30,6 @@ function Card(props){
             name={"card"}
             value={"Change"}
         />
-        <br />
     </div>);
 }
 

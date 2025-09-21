@@ -12,6 +12,7 @@ function HandSubmit(props){
         selectCards={props.selectCards}
         updateSelected={props.cardSelected}
         cardColl={props.cardColl}
+        isDisabled={props.isDisabled}
       />
       
       {props.gameover ? <GameOver />: null}
