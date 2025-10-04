@@ -1,8 +1,6 @@
 # 5 Card-Poker Sim
 A 5 card poker draw simulator which asks the user to make the highest possible poker hand in 3 attempts
 
-#README
-
 # Notes
 Project operates using node to create an express server back-end and a react server front-end;
 Project utilizes and external API hosted at "https://deckofcardsapi.com";
