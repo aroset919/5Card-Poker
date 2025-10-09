@@ -201,40 +201,44 @@ app.get("/game-state", (req, res) =>{
 
 //Obtain shuffled deck of cards to start the game with
 app.get("/init-data", async (req, res) => {
-    try{
-        const config = {
-            params: {deck_count: deckcount}
-        }
+    if(!(deck === undefined)){
+        res.redirect("/reshuffle-game");
+    }else{
+        try{
+            const config = {
+                params: {deck_count: deckcount}
+            }
 
-        //Generate a new deck
-        const dInfo = await axios.get(API_URL + "/api/deck/new/shuffle", config);
-        deck = dInfo.data.deck_id;
+            //Generate a new deck
+            const dInfo = await axios.get(API_URL + "/api/deck/new/shuffle", config);
+            deck = dInfo.data.deck_id;
 
-        cards.length = 0;
-        for(var i=0; i < totalcards; i++){
-            cards.push(
-            {
-                index: i,
-                code: "??",
-                img: API_URL + "/static/img/back.png",
-                value: "??",
-                suit: "??", 
+            cards.length = 0;
+            for(var i=0; i < totalcards; i++){
+                cards.push(
+                {
+                    index: i,
+                    code: "??",
+                    img: API_URL + "/static/img/back.png",
+                    value: "??",
+                    suit: "??", 
+                });
+            }
+
+            game_state = DEFAULTS.GAME_STATES.NEW_GAME;
+
+            res.json({
+                drawncards: cards,
+                hold: true,
+                currRound: round,
+                gameState: game_state,
+                pokerHand: "",
             });
+
+        }catch(error){
+            console.log(error);
+            res.send({content: JSON.stringify(error.response)});
         }
-
-        game_state = DEFAULTS.GAME_STATES.NEW_GAME;
-
-        res.json({
-            drawncards: cards,
-            hold: true,
-            currRound: round,
-            gameState: game_state,
-            pokerHand: "",
-        });
-
-    }catch(error){
-        console.log(error);
-        res.send({content: JSON.stringify(error.response)});
     }
 });
 
