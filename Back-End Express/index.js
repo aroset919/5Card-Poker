@@ -1,9 +1,9 @@
 import express from "express";
 import axios from "axios";
-import bodyParser from "body-parser";
 import path from "path";
 import {DEFAULTS} from "../Front-End React/src/components/Defaults.js";
 import { fileURLToPath } from 'url';
+import cookieSession from "cookie-session";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -17,14 +17,19 @@ const totalcards = 5;
 const cards = [];
 
 var game_state = DEFAULTS.GAME_STATES.NEW_SESSION;
-var deck;
+var deck=-1;
 var round = 0;
 
 app.use(express.static(FRONTEND_PATH));
-app.use(bodyParser.urlencoded({extended : true}));
+app.use(express.urlencoded({extended : true}));
 app.use(express.json());
+app.use(cookieSession({
+    name:'session',
+    secret: 'DECK-INFO-ONLY',
+    maxAge: 14 * 24 * 60 * 60 * 1000,
+}));
 
-//internal middleware method to return the current poker hand --flush, straight, high card, etc--
+/*------------------------ Current Poker Hand Logic ------------------------*/
 
 //Function matchCheck checks for pairs, trips, four of a kind, and full houses
 function matchCheck(hand){
@@ -190,6 +195,8 @@ function handCheck(){
 }
 
 
+/*------------------------ HTTP Paths ------------------------*/
+
 //Start the express app.
 app.get("/", (req, res) =>{
     res.sendFile("index.html");
@@ -201,7 +208,12 @@ app.get("/game-state", (req, res) =>{
 
 //Obtain shuffled deck of cards to start the game with
 app.get("/init-data", async (req, res) => {
-    if(!(deck === undefined)){
+    if(req.session.deck){
+        deck=req.session.deck;
+        console.log(deck);
+    }
+    console.log(`Deck: ${deck}`);
+    if(!(deck === -1)){
         res.redirect("/reshuffle-game");
     }else{
         try{
@@ -212,6 +224,7 @@ app.get("/init-data", async (req, res) => {
             //Generate a new deck
             const dInfo = await axios.get(API_URL + "/api/deck/new/shuffle", config);
             deck = dInfo.data.deck_id;
+            req.session.deck=deck;
 
             cards.length = 0;
             for(var i=0; i < totalcards; i++){
